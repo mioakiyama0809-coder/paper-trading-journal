@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>纸上交易日志 · A股波段练习</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<!-- ==========================================
+     顶部导航栏
+     ========================================== -->
+<header class="header">
+  <div class="header-inner">
+    <div class="logo">
+      <span class="logo-icon">📈</span>
+      纸上交易日志
+    </div>
+
+    <nav class="nav-tabs" role="tablist">
+      <button class="nav-tab active" data-tab="dashboard" role="tab">仪表盘</button>
+      <button class="nav-tab" data-tab="entry" role="tab">录入交易</button>
+      <button class="nav-tab" data-tab="records" role="tab">交易记录</button>
+      <button class="nav-tab" data-tab="charts" role="tab">图表分析</button>
+      <button class="nav-tab" data-tab="data" role="tab">数据管理</button>
+    </nav>
+
+    <div class="header-actions">
+      <button class="btn btn-secondary btn-sm" id="quickAddBtn">＋ 快速录入</button>
+    </div>
+  </div>
+</header>
+
+<!-- ==========================================
+     主内容区
+     ========================================== -->
+<main class="main">
+
+  <!-- ============ 仪表盘 ============ -->
+  <section class="tab-panel active" id="tab-dashboard">
+    <!-- 统计卡片 -->
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-label">总交易笔数</div>
+        <div class="stat-value neutral" id="stat-total">0</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">已平仓笔数</div>
+        <div class="stat-value neutral" id="stat-closed">0</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">持仓中</div>
+        <div class="stat-value neutral" id="stat-open">0</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">胜率</div>
+        <div class="stat-value" id="stat-winrate">–</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">盈亏比</div>
+        <div class="stat-value neutral" id="stat-rr">–</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">总盈亏</div>
+        <div class="stat-value" id="stat-total-pnl">–</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">平均盈利</div>
+        <div class="stat-value profit" id="stat-avg-profit">–</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">平均亏损</div>
+        <div class="stat-value loss" id="stat-avg-loss">–</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">最大单笔盈利</div>
+        <div class="stat-value profit" id="stat-max-profit">–</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">最大单笔亏损</div>
+        <div class="stat-value loss" id="stat-max-loss">–</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">最长连盈</div>
+        <div class="stat-value neutral" id="stat-win-streak">–</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">最长连亏</div>
+        <div class="stat-value neutral" id="stat-loss-streak">–</div>
+      </div>
+    </div>
+
+    <!-- 仪表盘图表 -->
+    <div class="charts-grid">
+      <div class="chart-card full-width">
+        <div class="chart-title">📊 累计盈亏曲线</div>
+        <div class="chart-container">
+          <canvas id="chartEquity"></canvas>
+        </div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">🥧 胜率分布</div>
+        <div class="chart-container">
+          <canvas id="chartWinRate"></canvas>
+        </div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">📦 各标的总盈亏</div>
+        <div class="chart-container">
+          <canvas id="chartBySymbol"></canvas>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 录入交易 ============ -->
+  <section class="tab-panel" id="tab-entry">
+    <div class="card">
+      <h2 class="card-title">📝 新增交易记录</h2>
+      <form id="tradeForm">
+        <div class="form-grid">
+          <!-- 日期 -->
+          <div class="form-group">
+            <label for="f-date">📅 日期 <span style="color:var(--profit)">*</span></label>
+            <input type="date" id="f-date" required />
+          </div>
+
+          <!-- 标的代码/名称 -->
+          <div class="form-group">
+            <label for="f-symbol">🏷 标的代码/名称 <span style="color:var(--profit)">*</span></label>
+            <input type="text" id="f-symbol" placeholder="如：512480 半导体ETF" required />
+          </div>
+
+          <!-- 操作方向 -->
+          <div class="form-group">
+            <label for="f-action">↕️ 操作方向 <span style="color:var(--profit)">*</span></label>
+            <select id="f-action" required>
+              <option value="buy">买入</option>
+              <option value="sell">卖出</option>
+            </select>
+          </div>
+
+          <!-- 价格 -->
+          <div class="form-group">
+            <label for="f-price">💰 价格 <span style="color:var(--profit)">*</span></label>
+            <input type="number" id="f-price" step="0.001" min="0" placeholder="买入/卖出价" required />
+          </div>
+
+          <!-- 数量 -->
+          <div class="form-group">
+            <label for="f-qty">📊 数量（股）<span style="color:var(--profit)">*</span></label>
+            <input type="number" id="f-qty" step="1" min="1" placeholder="股数" required />
+          </div>
+
+          <!-- 止损位 -->
+          <div class="form-group">
+            <label for="f-stoploss">🛑 止损位</label>
+            <input type="number" id="f-stoploss" step="0.001" min="0" placeholder="计划止损价" />
+          </div>
+
+          <!-- 目标位 -->
+          <div class="form-group">
+            <label for="f-target">🎯 目标位</label>
+            <input type="number" id="f-target" step="0.001" min="0" placeholder="计划目标价" />
+          </div>
+
+          <!-- 交易理由 -->
+          <div class="form-group full-width">
+            <label for="f-reason">💡 交易理由（看到什么信号？逻辑是什么？）</label>
+            <textarea id="f-reason" placeholder="例：MA20支撑位，板块ETF放量上涨，半导体指数回调到位，计划反弹做T..."></textarea>
+          </div>
+
+          <!-- 备注 -->
+          <div class="form-group full-width">
+            <label for="f-note">📌 备注（可选）</label>
+            <textarea id="f-note" placeholder="其他补充信息..."></textarea>
+          </div>
+        </div>
+
+        <div style="display:flex;gap:10px;align-items:center;">
+          <button type="submit" class="btn btn-primary" id="submitBtn">✅ 保存交易</button>
+          <button type="button" class="btn btn-secondary" id="cancelEditBtn" style="display:none;">取消编辑</button>
+          <span id="editHint" style="font-size:12px;color:var(--warning);display:none;">✏️ 正在编辑记录 #<span id="editIdHint"></span></span>
+        </div>
+      </form>
+    </div>
+  </section>
+
+  <!-- ============ 交易记录 ============ -->
+  <section class="tab-panel" id="tab-records">
+    <div class="card" style="padding-bottom:0;">
+      <div class="toolbar">
+        <input type="text" class="search-input" id="searchInput" placeholder="🔍 搜索标的..." />
+        <select class="filter-select" id="filterStatus">
+          <option value="all">全部状态</option>
+          <option value="open">持仓中</option>
+          <option value="closed">已平仓</option>
+        </select>
+        <select class="filter-select" id="filterAction">
+          <option value="all">全部方向</option>
+          <option value="buy">买入</option>
+          <option value="sell">卖出</option>
+        </select>
+        <span id="recordCount" style="font-size:12px;color:var(--text-secondary);margin-left:auto;"></span>
+      </div>
+    </div>
+
+    <div class="table-wrapper" id="recordsTableWrapper">
+      <table id="recordsTable">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>日期</th>
+            <th>标的</th>
+            <th>方向</th>
+            <th>价格</th>
+            <th>数量</th>
+            <th>金额</th>
+            <th>状态</th>
+            <th>盈亏</th>
+            <th>盈亏%</th>
+            <th>持仓天数</th>
+            <th>操作</th>
+          </tr>
+        </thead>
+        <tbody id="recordsBody">
+        </tbody>
+      </table>
+    </div>
+    <div class="empty-state" id="emptyState" style="display:none;">
+      <div class="empty-icon">📋</div>
+      <p>暂无交易记录，去「录入交易」添加第一笔吧！</p>
+    </div>
+  </section>
+
+  <!-- ============ 图表分析 ============ -->
+  <section class="tab-panel" id="tab-charts">
+    <div class="charts-grid">
+      <div class="chart-card full-width">
+        <div class="chart-title">📊 累计盈亏曲线</div>
+        <div class="chart-container" style="height:300px;">
+          <canvas id="chartEquity2"></canvas>
+        </div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">🥧 胜率分布</div>
+        <div class="chart-container" style="height:280px;">
+          <canvas id="chartWinRate2"></canvas>
+        </div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">📦 各标的总盈亏</div>
+        <div class="chart-container" style="height:280px;">
+          <canvas id="chartBySymbol2"></canvas>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 数据管理 ============ -->
+  <section class="tab-panel" id="tab-data">
+    <div class="data-mgmt-grid">
+      <div class="data-mgmt-card">
+        <h3>📤 导出数据</h3>
+        <p>将所有交易记录导出为 JSON 文件备份到本地，防止数据丢失。</p>
+        <button class="btn btn-secondary" id="exportBtn">导出 JSON</button>
+      </div>
+
+      <div class="data-mgmt-card">
+        <h3>📥 导入数据</h3>
+        <p>从之前导出的 JSON 文件恢复数据。<strong style="color:var(--warning);">注意：导入会合并到现有数据！</strong></p>
+        <input type="file" id="importFile" accept=".json" style="display:none;" />
+        <button class="btn btn-secondary" id="importBtn">选择 JSON 文件</button>
+      </div>
+
+      <div class="data-mgmt-card">
+        <h3>🗑 清空数据</h3>
+        <p>删除所有交易记录，此操作不可恢复。建议先导出备份！</p>
+        <button class="btn btn-danger" id="clearAllBtn">清空所有数据</button>
+      </div>
+    </div>
+
+    <!-- 数据统计信息 -->
+    <div class="card" style="margin-top:20px;">
+      <h3 class="card-title">ℹ️ 存储信息</h3>
+      <p style="font-size:13px;color:var(--text-secondary);" id="storageInfo">加载中...</p>
+    </div>
+  </section>
+
+</main>
+
+<!-- ==========================================
+     平仓模态框
+     ========================================== -->
+<div class="modal-overlay hidden" id="closeModal">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">💼 平仓结算</span>
+      <button class="modal-close" data-close="closeModal">✕</button>
+    </div>
+    <div class="modal-body">
+      <!-- 买入信息摘要 -->
+      <div class="close-info-grid" id="closeInfoGrid"></div>
+
+      <!-- 平仓表单 -->
+      <div class="form-grid">
+        <div class="form-group">
+          <label for="c-date">📅 卖出日期</label>
+          <input type="date" id="c-date" />
+        </div>
+        <div class="form-group">
+          <label for="c-price">💰 卖出价格</label>
+          <input type="number" id="c-price" step="0.001" min="0" placeholder="卖出价" />
+        </div>
+        <div class="form-group full-width">
+          <label for="c-review">📝 复盘总结</label>
+          <textarea id="c-review" rows="4" placeholder="判断对了还是错了？错在哪里？下次类似情况怎么做？"></textarea>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" data-close="closeModal">取消</button>
+      <button class="btn btn-primary" id="confirmCloseBtn">确认平仓</button>
+    </div>
+  </div>
+</div>
+
+<!-- ==========================================
+     复盘详情模态框
+     ========================================== -->
+<div class="modal-overlay hidden" id="reviewModal">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">📖 交易详情 &amp; 复盘</span>
+      <button class="modal-close" data-close="reviewModal">✕</button>
+    </div>
+    <div class="modal-body" id="reviewModalBody">
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" data-close="reviewModal">关闭</button>
+      <button class="btn btn-primary" id="editReviewBtn">✏️ 编辑复盘</button>
+    </div>
+  </div>
+</div>
+
+<!-- ==========================================
+     编辑复盘模态框
+     ========================================== -->
+<div class="modal-overlay hidden" id="editReviewModal">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">✏️ 编辑复盘总结</span>
+      <button class="modal-close" data-close="editReviewModal">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label for="er-review">复盘总结</label>
+        <textarea id="er-review" rows="6" placeholder="判断对了还是错了？错在哪里？对在哪里？下次遇到类似情况怎么做？"></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" data-close="editReviewModal">取消</button>
+      <button class="btn btn-primary" id="saveReviewBtn">保存复盘</button>
+    </div>
+  </div>
+</div>
+
+<!-- ==========================================
+     确认对话框
+     ========================================== -->
+<div class="modal-overlay hidden" id="confirmModal">
+  <div class="modal" style="max-width:400px;">
+    <div class="modal-header">
+      <span class="modal-title" id="confirmTitle">确认操作</span>
+      <button class="modal-close" data-close="confirmModal">✕</button>
+    </div>
+    <div class="modal-body">
+      <p id="confirmMessage" style="font-size:14px;color:var(--text-primary);"></p>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" data-close="confirmModal">取消</button>
+      <button class="btn btn-danger" id="confirmOkBtn">确认</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast 容器 -->
+<div class="toast-container" id="toastContainer"></div>
+
+<!-- Chart.js CDN -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<!-- 应用逻辑 -->
+<script src="app.js"></script>
+</body>
+</html>
