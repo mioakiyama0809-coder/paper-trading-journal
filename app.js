@@ -301,6 +301,7 @@ function renderRecords() {
   const filterStatus = document.getElementById('filterStatus').value;
   const filterAction = document.getElementById('filterAction').value;
 
+  const today = new Date().toISOString().slice(0, 10);
   let trades = loadTrades();
 
   // 按日期倒序排列
@@ -346,7 +347,7 @@ function renderRecords() {
     const holdDaysHtml = t.status === 'closed' && t.holdDays !== null
       ? `${t.holdDays}天`
       : t.status === 'open'
-        ? `<span class="neutral-text">${daysBetween(t.date, new Date().toISOString().slice(0, 10))}天</span>`
+        ? `<span class="neutral-text">${daysBetween(t.date, today)}天</span>`
         : '–';
 
     // 状态标签
@@ -802,7 +803,7 @@ function renderEquityChart(closed) {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       return;
     }
-    chartInstances[canvasId] = new Chart(canvas, JSON.parse(JSON.stringify(chartConfig)));
+    chartInstances[canvasId] = new Chart(canvas, structuredClone(chartConfig));
   });
 }
 
@@ -853,7 +854,7 @@ function renderWinRateChart(closed) {
       chartInstances[canvasId].destroy();
     }
     if (closed.length === 0) return;
-    chartInstances[canvasId] = new Chart(canvas, JSON.parse(JSON.stringify(chartConfig)));
+    chartInstances[canvasId] = new Chart(canvas, structuredClone(chartConfig));
   });
 }
 
@@ -913,7 +914,7 @@ function renderBySymbolChart(closed) {
       chartInstances[canvasId].destroy();
     }
     if (closed.length === 0) return;
-    chartInstances[canvasId] = new Chart(canvas, JSON.parse(JSON.stringify(chartConfig)));
+    chartInstances[canvasId] = new Chart(canvas, structuredClone(chartConfig));
   });
 }
 
